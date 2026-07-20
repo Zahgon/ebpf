@@ -7,105 +7,78 @@ import (
 
 //go:generate go tool stringer -output types_string.go -type=MapType,ProgramType,PinType
 
-// MapType indicates the type map structure
-// that will be initialized in the kernel.
 type MapType uint32
 
-// All the various map types that can be created
 const (
 	UnspecifiedMap MapType = MapType(platform.LinuxTag | iota)
-	// Hash is a hash map
+
 	Hash
-	// Array is an array map
+
 	Array
-	// ProgramArray - A program array map is a special kind of array map whose map
-	// values contain only file descriptors referring to other eBPF
-	// programs.  Thus, both the key_size and value_size must be
-	// exactly four bytes.  This map is used in conjunction with the
-	// TailCall helper.
+
 	ProgramArray
-	// PerfEventArray - A perf event array is used in conjunction with PerfEventRead
-	// and PerfEventOutput calls, to read the raw bpf_perf_data from the registers.
+
 	PerfEventArray
-	// PerCPUHash - This data structure is useful for people who have high performance
-	// network needs and can reconcile adds at the end of some cycle, so that
-	// hashes can be lock free without the use of XAdd, which can be costly.
+
 	PerCPUHash
-	// PerCPUArray - This data structure is useful for people who have high performance
-	// network needs and can reconcile adds at the end of some cycle, so that
-	// hashes can be lock free without the use of XAdd, which can be costly.
-	// Each CPU gets a copy of this hash, the contents of all of which can be reconciled
-	// later.
+
 	PerCPUArray
-	// StackTrace - This holds whole user and kernel stack traces, it can be retrieved with
-	// GetStackID
+
 	StackTrace
-	// CGroupArray - This is a very niche structure used to help SKBInCGroup determine
-	// if an skb is from a socket belonging to a specific cgroup
+
 	CGroupArray
-	// LRUHash - This allows you to create a small hash structure that will purge the
-	// least recently used items rather than throw an error when you run out of memory
+
 	LRUHash
-	// LRUCPUHash - This is NOT like PerCPUHash, this structure is shared among the CPUs,
-	// it has more to do with including the CPU id with the LRU calculation so that if a
-	// particular CPU is using a value over-and-over again, then it will be saved, but if
-	// a value is being retrieved a lot but sparsely across CPUs it is not as important, basically
-	// giving weight to CPU locality over overall usage.
+
 	LRUCPUHash
-	// LPMTrie - This is an implementation of Longest-Prefix-Match Trie structure. It is useful,
-	// for storing things like IP addresses which can be bit masked allowing for keys of differing
-	// values to refer to the same reference based on their masks. See wikipedia for more details.
+
 	LPMTrie
-	// ArrayOfMaps - Each item in the array is another map. The inner map mustn't be a map of maps
-	// itself.
+
 	ArrayOfMaps
-	// HashOfMaps - Each item in the hash map is another map. The inner map mustn't be a map of maps
-	// itself.
+
 	HashOfMaps
-	// DevMap - Specialized map to store references to network devices.
+
 	DevMap
-	// SockMap - Specialized map to store references to sockets.
+
 	SockMap
-	// CPUMap - Specialized map to store references to CPUs.
+
 	CPUMap
-	// XSKMap - Specialized map for XDP programs to store references to open sockets.
+
 	XSKMap
-	// SockHash - Specialized hash to store references to sockets.
+
 	SockHash
-	// CGroupStorage - Special map for CGroups.
+
 	CGroupStorage
-	// ReusePortSockArray - Specialized map to store references to sockets that can be reused.
+
 	ReusePortSockArray
-	// PerCPUCGroupStorage - Special per CPU map for CGroups.
+
 	PerCPUCGroupStorage
-	// Queue - FIFO storage for BPF programs.
+
 	Queue
-	// Stack - LIFO storage for BPF programs.
+
 	Stack
-	// SkStorage - Specialized map for local storage at SK for BPF programs.
+
 	SkStorage
-	// DevMapHash - Hash-based indexing scheme for references to network devices.
+
 	DevMapHash
-	// StructOpsMap - This map holds a kernel struct with its function pointer implemented in a BPF
-	// program.
+
 	StructOpsMap
-	// RingBuf - Similar to PerfEventArray, but shared across all CPUs.
+
 	RingBuf
-	// InodeStorage - Specialized local storage map for inodes.
+
 	InodeStorage
-	// TaskStorage - Specialized local storage map for task_struct.
+
 	TaskStorage
-	// BloomFilter - Space-efficient data structure to quickly test whether an element exists in a set.
+
 	BloomFilter
-	// UserRingbuf - The reverse of RingBuf, used to send messages from user space to BPF programs.
+
 	UserRingbuf
-	// CgroupStorage - Store data keyed on a cgroup. If the cgroup disappears, the key is automatically removed.
+
 	CgroupStorage
-	// Arena - Sparse shared memory region between a BPF program and user space.
+
 	Arena
 )
 
-// Map types (Windows).
 const (
 	WindowsHash MapType = MapType(platform.WindowsTag | iota + 1)
 	WindowsArray
@@ -122,86 +95,27 @@ const (
 	WindowsRingBuf
 )
 
-// MapTypeForPlatform returns a platform specific map type.
-//
-// Use this if the library doesn't provide a constant yet.
 func MapTypeForPlatform(plat string, typ uint32) (MapType, error) {
-	return platform.EncodeConstant[MapType](plat, typ)
+	_ = "STUB: not implemented"
+	return *new(MapType), nil
 }
 
-// hasPerCPUValue returns true if the Map stores a value per CPU.
-func (mt MapType) hasPerCPUValue() bool {
-	switch mt {
-	case PerCPUHash, PerCPUArray, LRUCPUHash, PerCPUCGroupStorage:
-		return true
-	case WindowsPerCPUHash, WindowsPerCPUArray, WindowsLRUCPUHash:
-		return true
-	default:
-		return false
-	}
-}
+func (mt MapType) hasPerCPUValue() bool { _ = "STUB: not implemented"; return false }
 
-// canStoreMapOrProgram returns true if the Map stores references to another Map
-// or Program.
-func (mt MapType) canStoreMapOrProgram() bool {
-	return mt.canStoreMap() || mt.canStoreProgram() || mt == StructOpsMap
-}
+func (mt MapType) canStoreMapOrProgram() bool { _ = "STUB: not implemented"; return false }
 
-// canStoreMap returns true if the map type accepts a map fd
-// for update and returns a map id for lookup.
-func (mt MapType) canStoreMap() bool {
-	return mt == ArrayOfMaps || mt == HashOfMaps || mt == WindowsArrayOfMaps || mt == WindowsHashOfMaps
-}
+func (mt MapType) canStoreMap() bool { _ = "STUB: not implemented"; return false }
 
-// canStoreProgram returns true if the map type accepts a program fd
-// for update and returns a program id for lookup.
-func (mt MapType) canStoreProgram() bool {
-	return mt == ProgramArray || mt == WindowsProgramArray
-}
+func (mt MapType) canStoreProgram() bool { _ = "STUB: not implemented"; return false }
 
-// canHaveValueSize returns true if the map type supports setting a value size.
-func (mt MapType) canHaveValueSize() bool {
-	switch mt {
-	case RingBuf, Arena:
-		return false
+func (mt MapType) canHaveValueSize() bool { _ = "STUB: not implemented"; return false }
 
-	// Special-case perf events since they require a value size of either 0 or 4
-	// for historical reasons. Let the library fix this up later.
-	case PerfEventArray:
-		return false
-	}
+func (mt MapType) mustHaveNoPrealloc() bool { _ = "STUB: not implemented"; return false }
 
-	return true
-}
+func (mt MapType) mustHaveZeroMaxEntries() bool { _ = "STUB: not implemented"; return false }
 
-// mustHaveNoPrealloc returns true if the map type does not support
-// preallocation and needs the BPF_F_NO_PREALLOC flag set to be created
-// successfully.
-func (mt MapType) mustHaveNoPrealloc() bool {
-	switch mt {
-	case CgroupStorage, InodeStorage, TaskStorage, SkStorage:
-		return true
-	case LPMTrie:
-		return true
-	}
-
-	return false
-}
-
-// mustHaveZeroMaxEntries returns true if the map type requires MaxEntries to be zero.
-func (mt MapType) mustHaveZeroMaxEntries() bool {
-	switch mt {
-	case CgroupStorage, CGroupStorage, PerCPUCGroupStorage, InodeStorage, TaskStorage, SkStorage:
-		return true
-	}
-
-	return false
-}
-
-// ProgramType of the eBPF program
 type ProgramType uint32
 
-// eBPF program types (Linux).
 const (
 	UnspecifiedProgram    = ProgramType(sys.BPF_PROG_TYPE_UNSPEC)
 	SocketFilter          = ProgramType(sys.BPF_PROG_TYPE_SOCKET_FILTER)
@@ -238,9 +152,6 @@ const (
 	Netfilter             = ProgramType(sys.BPF_PROG_TYPE_NETFILTER)
 )
 
-// eBPF program types (Windows).
-//
-// See https://github.com/microsoft/ebpf-for-windows/blob/main/include/ebpf_structs.h#L170
 const (
 	WindowsXDP ProgramType = ProgramType(platform.WindowsTag) | (iota + 1)
 	WindowsBind
@@ -250,24 +161,17 @@ const (
 	WindowsSample  ProgramType = ProgramType(platform.WindowsTag) | 999
 )
 
-// ProgramTypeForPlatform returns a platform specific program type.
-//
-// Use this if the library doesn't provide a constant yet.
 func ProgramTypeForPlatform(plat string, value uint32) (ProgramType, error) {
-	return platform.EncodeConstant[ProgramType](plat, value)
+	_ = "STUB: not implemented"
+	return *new(ProgramType), nil
 }
 
-// AttachType of the eBPF program, needed to differentiate allowed context accesses in
-// some newer program types like CGroupSockAddr. Should be set to AttachNone if not required.
-// Will cause invalid argument (EINVAL) at program load time if set incorrectly.
 type AttachType uint32
 
 //go:generate go tool stringer -type AttachType -trimprefix Attach
 
-// AttachNone is an alias for AttachCGroupInetIngress for readability reasons.
 const AttachNone AttachType = 0
 
-// Attach types (Linux).
 const (
 	AttachCGroupInetIngress          = AttachType(sys.BPF_CGROUP_INET_INGRESS)
 	AttachCGroupInetEgress           = AttachType(sys.BPF_CGROUP_INET_EGRESS)
@@ -328,9 +232,6 @@ const (
 	AttachNetkitPeer                 = AttachType(sys.BPF_NETKIT_PEER)
 )
 
-// Attach types (Windows).
-//
-// See https://github.com/microsoft/ebpf-for-windows/blob/main/include/ebpf_structs.h#L260
 const (
 	AttachWindowsXDP = AttachType(platform.WindowsTag | iota + 1)
 	AttachWindowsBind
@@ -343,78 +244,41 @@ const (
 	AttachWindowsXDPTest
 )
 
-// AttachTypeForPlatform returns a platform specific attach type.
-//
-// Use this if the library doesn't provide a constant yet.
 func AttachTypeForPlatform(plat string, value uint32) (AttachType, error) {
-	return platform.EncodeConstant[AttachType](plat, value)
+	_ = "STUB: not implemented"
+	return *new(AttachType), nil
 }
 
-// AttachFlags of the eBPF program used in BPF_PROG_ATTACH command
 type AttachFlags uint32
 
-// PinType determines whether a map is pinned into a BPFFS.
 type PinType uint32
 
-// Valid pin types.
-//
-// Mirrors enum libbpf_pin_type.
 const (
 	PinNone PinType = iota
-	// Pin an object by using its name as the filename.
+
 	PinByName
 )
 
-// LoadPinOptions control how a pinned object is loaded.
 type LoadPinOptions struct {
-	// Request a read-only or write-only object. The default is a read-write
-	// object. Only one of the flags may be set.
 	ReadOnly  bool
 	WriteOnly bool
 
-	// Raw flags for the syscall. Other fields of this struct take precedence.
 	Flags uint32
 }
 
-// Marshal returns a value suitable for BPF_OBJ_GET syscall file_flags parameter.
-func (lpo *LoadPinOptions) Marshal() uint32 {
-	if lpo == nil {
-		return 0
-	}
+func (lpo *LoadPinOptions) Marshal() uint32 { _ = "STUB: not implemented"; return 0 }
 
-	flags := lpo.Flags
-	if lpo.ReadOnly {
-		flags |= sys.BPF_F_RDONLY
-	}
-	if lpo.WriteOnly {
-		flags |= sys.BPF_F_WRONLY
-	}
-	return flags
-}
-
-// BatchOptions batch map operations options
-//
-// Mirrors libbpf struct bpf_map_batch_opts
-// Currently BPF_F_FLAG is the only supported
-// flag (for ElemFlags).
 type BatchOptions struct {
 	ElemFlags uint64
 	Flags     uint64
 }
 
-// LogLevel controls the verbosity of the kernel's eBPF program verifier.
-// These constants can be used for the ProgramOptions.LogLevel field.
 type LogLevel = sys.LogLevel
 
 const (
-	// Print verifier state at branch points.
 	LogLevelBranch = sys.BPF_LOG_LEVEL1
 
-	// Print verifier state for every instruction.
-	// Available since Linux v5.2.
 	LogLevelInstruction = sys.BPF_LOG_LEVEL2
 
-	// Print verifier errors and stats at the end of the verification process.
-	// Available since Linux v5.2.
 	LogLevelStats = sys.BPF_LOG_STATS
 )

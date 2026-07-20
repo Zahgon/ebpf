@@ -18,27 +18,6 @@ type epollPoller struct {
 	events []unix.EpollEvent
 }
 
-func newPoller(fd int) (*epollPoller, error) {
-	ep, err := epoll.New()
-	if err != nil {
-		return nil, err
-	}
+func newPoller(fd int) (*epollPoller, error) { _ = "STUB: not implemented"; return nil, nil }
 
-	if err := ep.Add(fd, 0); err != nil {
-		ep.Close()
-		return nil, err
-	}
-
-	return &epollPoller{
-		Poller: ep,
-		events: make([]unix.EpollEvent, 1),
-	}, nil
-}
-
-// Wait blocks until data is available or the deadline is reached.
-// Returns [os.ErrDeadlineExceeded] if a deadline was set and no wakeup was received.
-// Returns [ErrFlushed] if the ring buffer was flushed manually.
-func (p *epollPoller) Wait(deadline time.Time) error {
-	_, err := p.Poller.Wait(p.events, deadline)
-	return err
-}
+func (p *epollPoller) Wait(deadline time.Time) error { _ = "STUB: not implemented"; return nil }
