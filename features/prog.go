@@ -3,49 +3,17 @@ package features
 import (
 	"errors"
 	"fmt"
-	"slices"
-	"strings"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/asm"
 	"github.com/cilium/ebpf/btf"
 	"github.com/cilium/ebpf/internal"
 	"github.com/cilium/ebpf/internal/sys"
-	"github.com/cilium/ebpf/internal/unix"
 )
 
-// HaveProgramType probes the running kernel for the availability of the specified program type.
-//
-// See the package documentation for the meaning of the error return value.
-func HaveProgramType(pt ebpf.ProgramType) (err error) {
-	return haveProgramTypeMatrix.Result(pt)
-}
+func HaveProgramType(pt ebpf.ProgramType) (err error) { _ = "STUB: not implemented"; return nil }
 
-func probeProgram(spec *ebpf.ProgramSpec) error {
-	if spec.Instructions == nil {
-		spec.Instructions = asm.Instructions{
-			asm.LoadImm(asm.R0, 0, asm.DWord),
-			asm.Return(),
-		}
-	}
-	prog, err := ebpf.NewProgramWithOptions(spec, ebpf.ProgramOptions{
-		LogDisabled: true,
-	})
-	if err == nil {
-		prog.Close()
-	}
-
-	switch {
-	// EINVAL occurs when attempting to create a program with an unknown type.
-	// E2BIG occurs when ProgLoadAttr contains non-zero bytes past the end
-	// of the struct known by the running kernel, meaning the kernel is too old
-	// to support the given prog type.
-	case errors.Is(err, unix.EINVAL), errors.Is(err, unix.E2BIG):
-		err = ebpf.ErrNotSupported
-	}
-
-	return err
-}
+func probeProgram(spec *ebpf.ProgramSpec) error { _ = "STUB: not implemented"; return nil }
 
 var haveProgramTypeMatrix = internal.FeatureMatrix[ebpf.ProgramType]{
 	ebpf.SocketFilter:  {Version: "3.19"},
@@ -107,7 +75,7 @@ var haveProgramTypeMatrix = internal.FeatureMatrix[ebpf.ProgramType]{
 				License: "GPL",
 			})
 			if errors.Is(err, sys.ENOTSUPP) {
-				// ENOTSUPP means the program type is at least known to the kernel.
+
 				return nil
 			}
 			return err
@@ -116,7 +84,7 @@ var haveProgramTypeMatrix = internal.FeatureMatrix[ebpf.ProgramType]{
 	ebpf.Extension: {
 		Version: "5.6",
 		Fn: func() error {
-			// create btf.Func to add to first ins of target and extension so both progs are btf powered
+
 			btfFn := btf.Func{
 				Name: "a",
 				Type: &btf.FuncProto{
@@ -132,7 +100,6 @@ var haveProgramTypeMatrix = internal.FeatureMatrix[ebpf.ProgramType]{
 				asm.Return(),
 			}
 
-			// create target prog
 			prog, err := ebpf.NewProgramWithOptions(
 				&ebpf.ProgramSpec{
 					Type:         ebpf.XDP,
@@ -147,7 +114,6 @@ var haveProgramTypeMatrix = internal.FeatureMatrix[ebpf.ProgramType]{
 			}
 			defer prog.Close()
 
-			// probe for Extension prog with target
 			return probeProgram(&ebpf.ProgramSpec{
 				Type:         ebpf.Extension,
 				Instructions: insns,
@@ -200,7 +166,7 @@ func init() {
 	for key, ft := range haveProgramTypeMatrix {
 		ft.Name = key.String()
 		if ft.Fn == nil {
-			key := key // avoid the dreaded loop variable problem
+			key := key
 			ft.Fn = func() error { return probeProgram(&ebpf.ProgramSpec{Type: key}) }
 		}
 	}
@@ -220,113 +186,16 @@ var helperCache = internal.NewFeatureCache(func(key helperKey) *internal.Feature
 	}
 })
 
-// HaveProgramHelper probes the running kernel for the availability of the specified helper
-// function to a specified program type.
-// Return values have the following semantics:
-//
-//	err == nil: The feature is available.
-//	errors.Is(err, ebpf.ErrNotSupported): The feature is not available.
-//	err != nil: Any errors encountered during probe execution, wrapped.
-//
-// Note that the latter case may include false negatives, and that program creation may
-// succeed despite an error being returned.
-// Only `nil` and `ebpf.ErrNotSupported` are conclusive.
-//
-// Probe results are cached and persist throughout any process capability changes.
 func HaveProgramHelper(pt ebpf.ProgramType, helper asm.BuiltinFunc) error {
-	return helperCache.Result(helperKey{pt, helper})
+	_ = "STUB: not implemented"
+	return nil
 }
 
 func haveProgramHelper(pt ebpf.ProgramType, helper asm.BuiltinFunc) error {
-	if ok := helperProbeNotImplemented(pt); ok {
-		return fmt.Errorf("no feature probe for %v/%v", pt, helper)
-	}
-
-	if err := HaveProgramType(pt); err != nil {
-		return err
-	}
-
-	spec := &ebpf.ProgramSpec{
-		Type: pt,
-		Instructions: asm.Instructions{
-			helper.Call(),
-			asm.LoadImm(asm.R0, 0, asm.DWord),
-			asm.Return(),
-		},
-		License: "GPL",
-	}
-
-	switch pt {
-	case ebpf.CGroupSockAddr:
-		spec.AttachType = ebpf.AttachCGroupInet4Connect
-	case ebpf.CGroupSockopt:
-		spec.AttachType = ebpf.AttachCGroupGetsockopt
-	case ebpf.SkLookup:
-		spec.AttachType = ebpf.AttachSkLookup
-	case ebpf.Syscall:
-		spec.Flags = sys.BPF_F_SLEEPABLE
-	case ebpf.Netfilter:
-		spec.AttachType = ebpf.AttachNetfilter
-	}
-
-	prog, err := ebpf.NewProgramWithOptions(spec, ebpf.ProgramOptions{
-		LogLevel: 1,
-	})
-	if err == nil {
-		prog.Close()
-	}
-
-	var verr *ebpf.VerifierError
-	if !errors.As(err, &verr) {
-		return err
-	}
-
-	helperTag := fmt.Sprintf("#%d", helper)
-
-	switch {
-	// EACCES occurs when attempting to create a program probe with a helper
-	// while the register args when calling this helper aren't set up properly.
-	// We interpret this as the helper being available, because the verifier
-	// returns EINVAL if the helper is not supported by the running kernel.
-	case errors.Is(err, unix.EACCES):
-		err = nil
-
-	// EINVAL occurs when attempting to create a program with an unknown helper.
-	case errors.Is(err, unix.EINVAL):
-		// https://github.com/torvalds/linux/blob/09a0fa92e5b45e99cf435b2fbf5ebcf889cf8780/kernel/bpf/verifier.c#L10663
-		if logContainsAll(verr.Log, "invalid func", helperTag) {
-			return ebpf.ErrNotSupported
-		}
-
-		// https://github.com/torvalds/linux/blob/09a0fa92e5b45e99cf435b2fbf5ebcf889cf8780/kernel/bpf/verifier.c#L10668
-		wrongProgramType := logContainsAll(verr.Log, "program of this type cannot use helper", helperTag)
-		// https://github.com/torvalds/linux/blob/59b418c7063d30e0a3e1f592d47df096db83185c/kernel/bpf/verifier.c#L10204
-		// 4.9 doesn't include # in verifier output.
-		wrongProgramType = wrongProgramType || logContainsAll(verr.Log, "unknown func")
-		if wrongProgramType {
-			return fmt.Errorf("program of this type cannot use helper: %w", ebpf.ErrNotSupported)
-		}
-	}
-
-	return err
+	_ = "STUB: not implemented"
+	return nil
 }
 
-func logContainsAll(log []string, needles ...string) bool {
-	first := max(len(log)-5, 0) // Check last 5 lines.
-	return slices.ContainsFunc(log[first:], func(line string) bool {
-		for _, needle := range needles {
-			if !strings.Contains(line, needle) {
-				return false
-			}
-		}
-		return true
-	})
-}
+func logContainsAll(log []string, needles ...string) bool { _ = "STUB: not implemented"; return false }
 
-func helperProbeNotImplemented(pt ebpf.ProgramType) bool {
-	switch pt {
-	case ebpf.Extension, ebpf.LSM, ebpf.StructOps, ebpf.Tracing:
-		return true
-	}
-	return false
-}
+func helperProbeNotImplemented(pt ebpf.ProgramType) bool { _ = "STUB: not implemented"; return false }

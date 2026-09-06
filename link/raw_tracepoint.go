@@ -3,51 +3,19 @@
 package link
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/internal/sys"
 )
 
 type RawTracepointOptions struct {
-	// Tracepoint name.
 	Name string
-	// Program must be of type RawTracepoint*
+
 	Program *ebpf.Program
 }
 
-// AttachRawTracepoint links a BPF program to a raw_tracepoint.
-//
-// Requires at least Linux 4.17.
 func AttachRawTracepoint(opts RawTracepointOptions) (Link, error) {
-	if t := opts.Program.Type(); t != ebpf.RawTracepoint && t != ebpf.RawTracepointWritable {
-		return nil, fmt.Errorf("invalid program type %s, expected RawTracepoint(Writable)", t)
-	}
-	if opts.Program.FD() < 0 {
-		return nil, fmt.Errorf("invalid program: %w", sys.ErrClosedFd)
-	}
-
-	fd, err := sys.RawTracepointOpen(&sys.RawTracepointOpenAttr{
-		Name:   sys.NewStringPointer(opts.Name),
-		ProgFd: uint32(opts.Program.FD()),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	err = haveBPFLink()
-	if errors.Is(err, ErrNotSupported) {
-		// Prior to commit 70ed506c3bbc ("bpf: Introduce pinnable bpf_link abstraction")
-		// raw_tracepoints are just a plain fd.
-		return &simpleRawTracepoint{fd}, nil
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &rawTracepoint{RawLink{fd: fd}}, nil
+	_ = "STUB: not implemented"
+	return *new(Link), nil
 }
 
 type simpleRawTracepoint struct {
@@ -56,31 +24,22 @@ type simpleRawTracepoint struct {
 
 var _ Link = (*simpleRawTracepoint)(nil)
 
-func (frt *simpleRawTracepoint) isLink() {}
+func (frt *simpleRawTracepoint) isLink() { _ = "STUB: not implemented"; return }
 
-func (frt *simpleRawTracepoint) Close() error {
-	return frt.fd.Close()
-}
+func (frt *simpleRawTracepoint) Close() error { _ = "STUB: not implemented"; return nil }
 
 func (frt *simpleRawTracepoint) Update(_ *ebpf.Program) error {
-	return fmt.Errorf("update raw_tracepoint: %w", ErrNotSupported)
+	_ = "STUB: not implemented"
+	return nil
 }
 
-func (frt *simpleRawTracepoint) Pin(string) error {
-	return fmt.Errorf("pin raw_tracepoint: %w", ErrNotSupported)
-}
+func (frt *simpleRawTracepoint) Pin(string) error { _ = "STUB: not implemented"; return nil }
 
-func (frt *simpleRawTracepoint) Unpin() error {
-	return fmt.Errorf("unpin raw_tracepoint: %w", ErrNotSupported)
-}
+func (frt *simpleRawTracepoint) Unpin() error { _ = "STUB: not implemented"; return nil }
 
-func (frt *simpleRawTracepoint) Detach() error {
-	return fmt.Errorf("detach raw_tracepoint: %w", ErrNotSupported)
-}
+func (frt *simpleRawTracepoint) Detach() error { _ = "STUB: not implemented"; return nil }
 
-func (frt *simpleRawTracepoint) Info() (*Info, error) {
-	return nil, fmt.Errorf("can't get raw_tracepoint info: %w", ErrNotSupported)
-}
+func (frt *simpleRawTracepoint) Info() (*Info, error) { _ = "STUB: not implemented"; return nil, nil }
 
 type rawTracepoint struct {
 	RawLink
@@ -88,22 +47,6 @@ type rawTracepoint struct {
 
 var _ Link = (*rawTracepoint)(nil)
 
-func (rt *rawTracepoint) Update(_ *ebpf.Program) error {
-	return fmt.Errorf("update raw_tracepoint: %w", ErrNotSupported)
-}
+func (rt *rawTracepoint) Update(_ *ebpf.Program) error { _ = "STUB: not implemented"; return nil }
 
-func (rt *rawTracepoint) Info() (*Info, error) {
-	var info sys.RawTracepointLinkInfo
-	name, err := queryInfoWithString(rt.fd, &info, &info.TpName, &info.TpNameLen)
-	if err != nil {
-		return nil, err
-	}
-	return &Info{
-		info.Type,
-		info.Id,
-		ebpf.ProgramID(info.ProgId),
-		&RawTracepointInfo{
-			Name: name,
-		},
-	}, nil
-}
+func (rt *rawTracepoint) Info() (*Info, error) { _ = "STUB: not implemented"; return nil, nil }

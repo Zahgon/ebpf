@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/cilium/ebpf/asm"
 	"github.com/cilium/ebpf/internal"
@@ -19,69 +18,23 @@ import (
 )
 
 var (
-	// pre-allocating these here since they may
-	// get called in hot code paths and cause
-	// unnecessary memory allocations
 	sysErrKeyNotExist  = sys.Error(ErrKeyNotExist, unix.ENOENT)
 	sysErrKeyExist     = sys.Error(ErrKeyExist, unix.EEXIST)
 	sysErrNotSupported = sys.Error(ErrNotSupported, sys.ENOTSUPP)
 )
 
-// sanitizeName replaces all invalid characters in name with replacement.
-// Passing a negative value for replacement will delete characters instead
-// of replacing them.
-//
-// The set of allowed characters may change over time.
-func sanitizeName(name string, replacement rune) string {
-	return strings.Map(func(char rune) rune {
-		switch {
-		case char >= 'A' && char <= 'Z':
-			return char
-		case char >= 'a' && char <= 'z':
-			return char
-		case char >= '0' && char <= '9':
-			return char
-		case char == '.':
-			return char
-		case char == '_':
-			return char
-		default:
-			return replacement
-		}
-	}, name)
-}
+func sanitizeName(name string, replacement rune) string { _ = "STUB: not implemented"; return "" }
 
-func maybeFillObjName(name string) sys.ObjName {
-	if errors.Is(haveObjName(), ErrNotSupported) {
-		return sys.ObjName{}
-	}
-
-	name = sanitizeName(name, -1)
-	if errors.Is(objNameAllowsDot(), ErrNotSupported) {
-		name = strings.ReplaceAll(name, ".", "")
-	}
-
-	return sys.NewObjName(name)
-}
+func maybeFillObjName(name string) sys.ObjName { _ = "STUB: not implemented"; return *new(sys.ObjName) }
 
 func progLoad(insns asm.Instructions, typ ProgramType, license string) (*sys.FD, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, insns.Size()))
-	if err := insns.Marshal(buf, internal.NativeEndian); err != nil {
-		return nil, err
-	}
-	bytecode := buf.Bytes()
-
-	return sys.ProgLoad(&sys.ProgLoadAttr{
-		ProgType: sys.ProgType(typ),
-		License:  sys.NewStringPointer(license),
-		Insns:    sys.SlicePointer(bytecode),
-		InsnCnt:  uint32(len(bytecode) / asm.InstructionSize),
-	})
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 var haveNestedMaps = internal.NewFeatureTest("nested maps", func() error {
 	if platform.IsWindows {
-		// We only support efW versions which have this feature, no need to probe.
+
 		return nil
 	}
 
@@ -90,7 +43,7 @@ var haveNestedMaps = internal.NewFeatureTest("nested maps", func() error {
 		KeySize:    4,
 		ValueSize:  4,
 		MaxEntries: 1,
-		// Invalid file descriptor.
+
 		InnerMapFd: ^uint32(0),
 	})
 	if errors.Is(err, unix.EINVAL) {
@@ -103,8 +56,7 @@ var haveNestedMaps = internal.NewFeatureTest("nested maps", func() error {
 }, "4.12", "windows:0.21.0")
 
 var haveMapMutabilityModifiers = internal.NewFeatureTest("read- and write-only maps", func() error {
-	// This checks BPF_F_RDONLY_PROG and BPF_F_WRONLY_PROG. Since
-	// BPF_MAP_FREEZE appeared in 5.2 as well we don't do a separate check.
+
 	m, err := sys.MapCreate(&sys.MapCreateAttr{
 		MapType:    sys.MapType(Array),
 		KeySize:    4,
@@ -120,7 +72,7 @@ var haveMapMutabilityModifiers = internal.NewFeatureTest("read- and write-only m
 }, "5.2")
 
 var haveMmapableMaps = internal.NewFeatureTest("mmapable maps", func() error {
-	// This checks BPF_F_MMAPABLE, which appeared in 5.5 for array maps.
+
 	m, err := sys.MapCreate(&sys.MapCreateAttr{
 		MapType:    sys.MapType(Array),
 		KeySize:    4,
@@ -136,7 +88,7 @@ var haveMmapableMaps = internal.NewFeatureTest("mmapable maps", func() error {
 }, "5.5")
 
 var haveInnerMaps = internal.NewFeatureTest("inner maps", func() error {
-	// This checks BPF_F_INNER_MAP, which appeared in 5.10.
+
 	m, err := sys.MapCreate(&sys.MapCreateAttr{
 		MapType:    sys.MapType(Array),
 		KeySize:    4,
@@ -153,7 +105,7 @@ var haveInnerMaps = internal.NewFeatureTest("inner maps", func() error {
 }, "5.10")
 
 var haveNoPreallocMaps = internal.NewFeatureTest("prealloc maps", func() error {
-	// This checks BPF_F_NO_PREALLOC, which appeared in 4.6.
+
 	m, err := sys.MapCreate(&sys.MapCreateAttr{
 		MapType:    sys.MapType(Hash),
 		KeySize:    4,
@@ -169,33 +121,11 @@ var haveNoPreallocMaps = internal.NewFeatureTest("prealloc maps", func() error {
 	return nil
 }, "4.6")
 
-func wrapMapError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if errors.Is(err, unix.ENOENT) {
-		return sysErrKeyNotExist
-	}
-
-	if errors.Is(err, unix.EEXIST) {
-		return sysErrKeyExist
-	}
-
-	if errors.Is(err, sys.ENOTSUPP) {
-		return sysErrNotSupported
-	}
-
-	if errors.Is(err, unix.E2BIG) {
-		return fmt.Errorf("key too big for map: %w", err)
-	}
-
-	return err
-}
+func wrapMapError(err error) error { _ = "STUB: not implemented"; return nil }
 
 var haveObjName = internal.NewFeatureTest("object names", func() error {
 	if platform.IsWindows {
-		// We only support efW versions which have this feature, no need to probe.
+
 		return nil
 	}
 
@@ -218,7 +148,7 @@ var haveObjName = internal.NewFeatureTest("object names", func() error {
 
 var objNameAllowsDot = internal.NewFeatureTest("dot in object names", func() error {
 	if platform.IsWindows {
-		// We only support efW versions which have this feature, no need to probe.
+
 		return nil
 	}
 

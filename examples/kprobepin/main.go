@@ -1,9 +1,5 @@
 //go:build linux
 
-// This program demonstrates attaching an eBPF program to a kernel symbol.
-// The eBPF program will be attached to the start of the sys_execve
-// kernel function and prints out the number of times it has been called
-// every second.
 package main
 
 import (
@@ -26,10 +22,8 @@ const (
 
 func main() {
 
-	// Name of the kernel function to trace.
 	fn := "sys_execve"
 
-	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Fatal(err)
 	}
@@ -42,10 +36,7 @@ func main() {
 	var objs bpfObjects
 	if err := loadBpfObjects(&objs, &ebpf.CollectionOptions{
 		Maps: ebpf.MapOptions{
-			// Pin the map to the BPF filesystem and configure the
-			// library to automatically re-write it in the BPF
-			// program so it can be re-used if it already exists or
-			// create it if not
+
 			PinPath: pinPath,
 		},
 	}); err != nil {
@@ -53,18 +44,12 @@ func main() {
 	}
 	defer objs.Close()
 
-	// Open a Kprobe at the entry point of the kernel function and attach the
-	// pre-compiled program. Each time the kernel function enters, the program
-	// will increment the execution counter by 1. The read loop below polls this
-	// map value once per second.
 	kp, err := link.Kprobe(fn, objs.KprobeExecve, nil)
 	if err != nil {
 		log.Fatalf("opening kprobe: %s", err)
 	}
 	defer kp.Close()
 
-	// Read loop reporting the total amount of times the kernel
-	// function was entered, once per second.
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 

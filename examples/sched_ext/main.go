@@ -14,14 +14,6 @@ import (
 
 //go:generate go tool bpf2go -no-global-types -tags linux bpf sched_ext.c -- -I../headers/
 
-// Load a minimal defining sched_ext_ops map
-//
-// After run this program, you can find the current status of the BPF scheduler can be determined as follows:
-//
-//	# cat /sys/kernel/sched_ext/state
-//	enabled
-//	# cat /sys/kernel/sched_ext/root/ops
-//	miminal
 func main() {
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Fatal(err)

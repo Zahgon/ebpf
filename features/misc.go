@@ -9,15 +9,7 @@ import (
 	"github.com/cilium/ebpf/internal/sys"
 )
 
-// HaveLargeInstructions probes the running kernel if more than 4096 instructions
-// per program are supported.
-//
-// Upstream commit c04c0d2b968a ("bpf: increase complexity limit and maximum program size").
-//
-// See the package documentation for the meaning of the error return value.
-func HaveLargeInstructions() error {
-	return haveLargeInstructions()
-}
+func HaveLargeInstructions() error { _ = "STUB: not implemented"; return nil }
 
 var haveLargeInstructions = internal.NewFeatureTest(">4096 instructions", func() error {
 	const maxInsns = 4096
@@ -34,14 +26,7 @@ var haveLargeInstructions = internal.NewFeatureTest(">4096 instructions", func()
 	})
 }, "5.2")
 
-// HaveBoundedLoops probes the running kernel if bounded loops are supported.
-//
-// Upstream commit 2589726d12a1 ("bpf: introduce bounded loops").
-//
-// See the package documentation for the meaning of the error return value.
-func HaveBoundedLoops() error {
-	return haveBoundedLoops()
-}
+func HaveBoundedLoops() error { _ = "STUB: not implemented"; return nil }
 
 var haveBoundedLoops = internal.NewFeatureTest("bounded loops", func() error {
 	return probeProgram(&ebpf.ProgramSpec{
@@ -55,14 +40,7 @@ var haveBoundedLoops = internal.NewFeatureTest("bounded loops", func() error {
 	})
 }, "5.3")
 
-// HaveV2ISA probes the running kernel if instructions of the v2 ISA are supported.
-//
-// Upstream commit 92b31a9af73b ("bpf: add BPF_J{LT,LE,SLT,SLE} instructions").
-//
-// See the package documentation for the meaning of the error return value.
-func HaveV2ISA() error {
-	return haveV2ISA()
-}
+func HaveV2ISA() error { _ = "STUB: not implemented"; return nil }
 
 var haveV2ISA = internal.NewFeatureTest("v2 ISA", func() error {
 	err := probeProgram(&ebpf.ProgramSpec{
@@ -74,21 +52,14 @@ var haveV2ISA = internal.NewFeatureTest("v2 ISA", func() error {
 			asm.Return().WithSymbol("exit"),
 		},
 	})
-	// This sometimes bubbles up from the JIT on aarch64.
+
 	if errors.Is(err, sys.ENOTSUPP) {
 		return ebpf.ErrNotSupported
 	}
 	return err
 }, "4.14")
 
-// HaveV3ISA probes the running kernel if instructions of the v3 ISA are supported.
-//
-// Upstream commit 092ed0968bb6 ("bpf: verifier support JMP32").
-//
-// See the package documentation for the meaning of the error return value.
-func HaveV3ISA() error {
-	return haveV3ISA()
-}
+func HaveV3ISA() error { _ = "STUB: not implemented"; return nil }
 
 var haveV3ISA = internal.NewFeatureTest("v3 ISA", func() error {
 	err := probeProgram(&ebpf.ProgramSpec{
@@ -100,21 +71,14 @@ var haveV3ISA = internal.NewFeatureTest("v3 ISA", func() error {
 			asm.Return().WithSymbol("exit"),
 		},
 	})
-	// This sometimes bubbles up from the JIT on aarch64.
+
 	if errors.Is(err, sys.ENOTSUPP) {
 		return ebpf.ErrNotSupported
 	}
 	return err
 }, "5.1")
 
-// HaveV4ISA probes the running kernel if instructions of the v4 ISA are supported.
-//
-// Upstream commit 1f9a1ea821ff ("bpf: Support new sign-extension load insns").
-//
-// See the package documentation for the meaning of the error return value.
-func HaveV4ISA() error {
-	return haveV4ISA()
-}
+func HaveV4ISA() error { _ = "STUB: not implemented"; return nil }
 
 var haveV4ISA = internal.NewFeatureTest("v4 ISA", func() error {
 	err := probeProgram(&ebpf.ProgramSpec{
@@ -127,7 +91,7 @@ var haveV4ISA = internal.NewFeatureTest("v4 ISA", func() error {
 			asm.Return().WithSymbol("exit"),
 		},
 	})
-	// This sometimes bubbles up from the JIT on aarch64.
+
 	if errors.Is(err, sys.ENOTSUPP) {
 		return ebpf.ErrNotSupported
 	}

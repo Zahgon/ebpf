@@ -25,9 +25,6 @@ var haveProgAttach = internal.NewFeatureTest("BPF_PROG_ATTACH", func() error {
 		return internal.ErrNotSupported
 	}
 
-	// BPF_PROG_ATTACH was introduced at the same time as CGgroupSKB,
-	// so being able to load the program is enough to infer that we
-	// have the syscall.
 	prog.Close()
 	return nil
 }, "4.10")
@@ -53,11 +50,8 @@ var haveProgAttachReplace = internal.NewFeatureTest("BPF_PROG_ATTACH atomic repl
 
 	defer prog.Close()
 
-	// We know that we have BPF_PROG_ATTACH since we can load CGroupSKB programs.
-	// If passing BPF_F_REPLACE gives us EINVAL we know that the feature isn't
-	// present.
 	attr := sys.ProgAttachAttr{
-		// We rely on this being checked after attachFlags.
+
 		TargetFdOrIfindex: ^uint32(0),
 		AttachBpfFd:       uint32(prog.FD()),
 		AttachType:        uint32(ebpf.AttachCGroupInetIngress),
@@ -76,7 +70,7 @@ var haveProgAttachReplace = internal.NewFeatureTest("BPF_PROG_ATTACH atomic repl
 
 var haveBPFLink = internal.NewFeatureTest("bpf_link", func() error {
 	attr := sys.LinkCreateAttr{
-		// This is a hopefully invalid file descriptor, which triggers EBADF.
+
 		TargetFd:   ^uint32(0),
 		ProgFd:     ^uint32(0),
 		AttachType: sys.AttachType(ebpf.AttachCGroupInetIngress),
@@ -93,9 +87,7 @@ var haveBPFLink = internal.NewFeatureTest("bpf_link", func() error {
 
 var haveProgQuery = internal.NewFeatureTest("BPF_PROG_QUERY", func() error {
 	attr := sys.ProgQueryAttr{
-		// We rely on this being checked during the syscall.
-		// With an otherwise correct payload we expect EBADF here
-		// as an indication that the feature is present.
+
 		TargetFdOrIfindex: ^uint32(0),
 		AttachType:        sys.AttachType(ebpf.AttachCGroupInetIngress),
 	}
@@ -127,9 +119,7 @@ var haveTCX = internal.NewFeatureTest("tcx", func() error {
 
 	defer prog.Close()
 	attr := sys.LinkCreateTcxAttr{
-		// We rely on this being checked during the syscall.
-		// With an otherwise correct payload we expect ENODEV here
-		// as an indication that the feature is present.
+
 		TargetIfindex: ^uint32(0),
 		ProgFd:        uint32(prog.FD()),
 		AttachType:    sys.AttachType(ebpf.AttachTCXIngress),
@@ -162,9 +152,7 @@ var haveNetkit = internal.NewFeatureTest("netkit", func() error {
 
 	defer prog.Close()
 	attr := sys.LinkCreateNetkitAttr{
-		// We rely on this being checked during the syscall.
-		// With an otherwise correct payload we expect ENODEV here
-		// as an indication that the feature is present.
+
 		TargetIfindex: ^uint32(0),
 		ProgFd:        uint32(prog.FD()),
 		AttachType:    sys.AttachType(ebpf.AttachNetkitPrimary),

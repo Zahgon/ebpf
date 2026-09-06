@@ -1,16 +1,9 @@
 package asm
 
-import (
-	"fmt"
-)
-
-// Register is the source or destination of most operations.
 type Register uint8
 
-// R0 contains return values.
 const R0 Register = 0
 
-// Registers for function arguments.
 const (
 	R1 Register = R0 + 1 + iota
 	R2
@@ -19,7 +12,6 @@ const (
 	R5
 )
 
-// Callee saved registers preserved by function calls.
 const (
 	R6 Register = R5 + 1 + iota
 	R7
@@ -27,27 +19,19 @@ const (
 	R9
 )
 
-// Read-only frame pointer to access stack.
 const (
 	R10 Register = R9 + 1
 	RFP          = R10
 )
 
-// Pseudo registers used by 64bit loads and jumps
 const (
-	PseudoMapFD     = R1 // BPF_PSEUDO_MAP_FD
-	PseudoMapValue  = R2 // BPF_PSEUDO_MAP_VALUE
-	PseudoBtfId     = R3 // BPF_PSEUDO_BTF_ID
-	PseudoCall      = R1 // BPF_PSEUDO_CALL
-	PseudoFunc      = R4 // BPF_PSEUDO_FUNC
-	PseudoKfuncCall = R2 // BPF_PSEUDO_KFUNC_CALL
-	PseudoMayGoto   = R0 // BPF_MAY_GOTO
+	PseudoMapFD     = R1
+	PseudoMapValue  = R2
+	PseudoBtfId     = R3
+	PseudoCall      = R1
+	PseudoFunc      = R4
+	PseudoKfuncCall = R2
+	PseudoMayGoto   = R0
 )
 
-func (r Register) String() string {
-	v := uint8(r)
-	if v == 10 {
-		return "rfp"
-	}
-	return fmt.Sprintf("r%d", v)
-}
+func (r Register) String() string { _ = "STUB: not implemented"; return "" }

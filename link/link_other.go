@@ -3,14 +3,9 @@
 package link
 
 import (
-	"fmt"
-
-	"github.com/cilium/ebpf/internal"
-	"github.com/cilium/ebpf/internal/platform"
 	"github.com/cilium/ebpf/internal/sys"
 )
 
-// Valid link types.
 const (
 	UnspecifiedType   = sys.BPF_LINK_TYPE_UNSPEC
 	RawTracepointType = sys.BPF_LINK_TYPE_RAW_TRACEPOINT
@@ -28,86 +23,14 @@ const (
 	StructOpsType     = sys.BPF_LINK_TYPE_STRUCT_OPS
 )
 
-// AttachRawLink creates a raw link.
 func AttachRawLink(opts RawLinkOptions) (*RawLink, error) {
-	if err := haveBPFLink(); err != nil {
-		return nil, err
-	}
-
-	if opts.Target < 0 {
-		return nil, fmt.Errorf("invalid target: %s", sys.ErrClosedFd)
-	}
-
-	progFd := opts.Program.FD()
-	if progFd < 0 {
-		return nil, fmt.Errorf("invalid program: %s", sys.ErrClosedFd)
-	}
-
-	p, attachType := platform.DecodeConstant(opts.Attach)
-	if p != platform.Linux {
-		return nil, fmt.Errorf("attach type %s: %w", opts.Attach, internal.ErrNotSupportedOnOS)
-	}
-
-	attr := sys.LinkCreateAttr{
-		TargetFd:    uint32(opts.Target),
-		ProgFd:      uint32(progFd),
-		AttachType:  sys.AttachType(attachType),
-		TargetBtfId: opts.BTF,
-		Flags:       opts.Flags,
-	}
-	fd, err := sys.LinkCreate(&attr)
-	if err != nil {
-		return nil, fmt.Errorf("create link: %w", err)
-	}
-
-	return &RawLink{fd, ""}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
-// wrap a RawLink in a more specific type if possible.
-//
-// The function takes ownership of raw and closes it on error.
 func wrapRawLink(raw *RawLink) (_ Link, err error) {
-	defer func() {
-		if err != nil {
-			raw.Close()
-		}
-	}()
-
-	info, err := raw.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	switch info.Type {
-	case RawTracepointType:
-		return &rawTracepoint{*raw}, nil
-	case TracingType:
-		return &tracing{*raw}, nil
-	case CgroupType:
-		return &linkCgroup{*raw}, nil
-	case IterType:
-		return &Iter{*raw}, nil
-	case NetNsType:
-		return &NetNsLink{*raw}, nil
-	case KprobeMultiType:
-		return &kprobeMultiLink{*raw}, nil
-	case UprobeMultiType:
-		return &uprobeMultiLink{*raw}, nil
-	case PerfEventType:
-		return &perfEventLink{*raw, nil}, nil
-	case TCXType:
-		return &tcxLink{*raw}, nil
-	case NetfilterType:
-		return &netfilterLink{*raw}, nil
-	case NetkitType:
-		return &netkitLink{*raw}, nil
-	case XDPType:
-		return &xdpLink{*raw}, nil
-	case StructOpsType:
-		return &structOpsLink{*raw}, nil
-	default:
-		return raw, nil
-	}
+	_ = "STUB: not implemented"
+	return *new(Link), nil
 }
 
 type TracingInfo struct {
@@ -157,7 +80,6 @@ type IterInfo struct {
 }
 
 type KprobeMultiInfo struct {
-	// Count is the number of addresses hooked by the kprobe.
 	Count   uint32
 	Flags   uint32
 	Missed  uint64
@@ -170,19 +92,9 @@ type KprobeMultiAddress struct {
 	Cookie  uint64
 }
 
-// Addresses are the addresses hooked by the kprobe.
 func (kpm *KprobeMultiInfo) Addresses() ([]KprobeMultiAddress, bool) {
-	if kpm.addrs == nil || len(kpm.addrs) != len(kpm.cookies) {
-		return nil, false
-	}
-	addrs := make([]KprobeMultiAddress, len(kpm.addrs))
-	for i := range kpm.addrs {
-		addrs[i] = KprobeMultiAddress{
-			Address: kpm.addrs[i],
-			Cookie:  kpm.cookies[i],
-		}
-	}
-	return addrs, true
+	_ = "STUB: not implemented"
+	return nil, false
 }
 
 type UprobeMultiInfo struct {
@@ -192,12 +104,7 @@ type UprobeMultiInfo struct {
 	offsets       []uint64
 	cookies       []uint64
 	refCtrOffsets []uint64
-	// File is the path that the file the uprobe was attached to
-	// had at creation time.
-	//
-	// However, due to various circumstances (differing mount namespaces,
-	// file replacement, ...), this path may not point to the same binary
-	// the uprobe was originally attached to.
+
 	File string
 	pid  uint32
 }
@@ -208,28 +115,12 @@ type UprobeMultiOffset struct {
 	ReferenceCount uint64
 }
 
-// Offsets returns the offsets that the uprobe was attached to along with the related cookies and ref counters.
 func (umi *UprobeMultiInfo) Offsets() ([]UprobeMultiOffset, bool) {
-	if umi.offsets == nil || len(umi.cookies) != len(umi.offsets) || len(umi.refCtrOffsets) != len(umi.offsets) {
-		return nil, false
-	}
-	var adresses = make([]UprobeMultiOffset, len(umi.offsets))
-	for i := range umi.offsets {
-		adresses[i] = UprobeMultiOffset{
-			Offset:         umi.offsets[i],
-			Cookie:         umi.cookies[i],
-			ReferenceCount: umi.refCtrOffsets[i],
-		}
-	}
-	return adresses, true
+	_ = "STUB: not implemented"
+	return nil, false
 }
 
-// Pid returns the process ID that this uprobe is attached to.
-//
-// If it does not exist, the uprobe will trigger for all processes.
-func (umi *UprobeMultiInfo) Pid() (uint32, bool) {
-	return umi.pid, umi.pid > 0
-}
+func (umi *UprobeMultiInfo) Pid() (uint32, bool) { _ = "STUB: not implemented"; return 0, false }
 
 const (
 	PerfEventUnspecified = sys.BPF_PERF_EVENT_UNSPEC
@@ -246,25 +137,13 @@ type PerfEventInfo struct {
 	extra any
 }
 
-func (r *PerfEventInfo) Kprobe() *KprobeInfo {
-	e, _ := r.extra.(*KprobeInfo)
-	return e
-}
+func (r *PerfEventInfo) Kprobe() *KprobeInfo { _ = "STUB: not implemented"; return nil }
 
-func (r *PerfEventInfo) Uprobe() *UprobeInfo {
-	e, _ := r.extra.(*UprobeInfo)
-	return e
-}
+func (r *PerfEventInfo) Uprobe() *UprobeInfo { _ = "STUB: not implemented"; return nil }
 
-func (r *PerfEventInfo) Tracepoint() *TracepointInfo {
-	e, _ := r.extra.(*TracepointInfo)
-	return e
-}
+func (r *PerfEventInfo) Tracepoint() *TracepointInfo { _ = "STUB: not implemented"; return nil }
 
-func (r *PerfEventInfo) Event() *EventInfo {
-	e, _ := r.extra.(*EventInfo)
-	return e
-}
+func (r *PerfEventInfo) Event() *EventInfo { _ = "STUB: not implemented"; return nil }
 
 type KprobeInfo struct {
 	Address  uint64
@@ -274,12 +153,6 @@ type KprobeInfo struct {
 }
 
 type UprobeInfo struct {
-	// File is the path that the file the uprobe was attached to
-	// had at creation time.
-	//
-	// However, due to various circumstances (differing mount namespaces,
-	// file replacement, ...), this path may not point to the same binary
-	// the uprobe was originally attached to.
 	File                 string
 	Offset               uint32
 	Cookie               uint64
@@ -297,98 +170,26 @@ type EventInfo struct {
 	Cookie uint64
 }
 
-// Tracing returns tracing type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) Tracing() *TracingInfo {
-	e, _ := r.extra.(*TracingInfo)
-	return e
-}
+func (r Info) Tracing() *TracingInfo { _ = "STUB: not implemented"; return nil }
 
-// Cgroup returns cgroup type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) Cgroup() *CgroupInfo {
-	e, _ := r.extra.(*CgroupInfo)
-	return e
-}
+func (r Info) Cgroup() *CgroupInfo { _ = "STUB: not implemented"; return nil }
 
-// NetNs returns netns type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) NetNs() *NetNsInfo {
-	e, _ := r.extra.(*NetNsInfo)
-	return e
-}
+func (r Info) NetNs() *NetNsInfo { _ = "STUB: not implemented"; return nil }
 
-// XDP returns XDP type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) XDP() *XDPInfo {
-	e, _ := r.extra.(*XDPInfo)
-	return e
-}
+func (r Info) XDP() *XDPInfo { _ = "STUB: not implemented"; return nil }
 
-// TCX returns TCX type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) TCX() *TCXInfo {
-	e, _ := r.extra.(*TCXInfo)
-	return e
-}
+func (r Info) TCX() *TCXInfo { _ = "STUB: not implemented"; return nil }
 
-// Netfilter returns netfilter type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) Netfilter() *NetfilterInfo {
-	e, _ := r.extra.(*NetfilterInfo)
-	return e
-}
+func (r Info) Netfilter() *NetfilterInfo { _ = "STUB: not implemented"; return nil }
 
-// Netkit returns netkit type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) Netkit() *NetkitInfo {
-	e, _ := r.extra.(*NetkitInfo)
-	return e
-}
+func (r Info) Netkit() *NetkitInfo { _ = "STUB: not implemented"; return nil }
 
-// KprobeMulti returns kprobe-multi type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) KprobeMulti() *KprobeMultiInfo {
-	e, _ := r.extra.(*KprobeMultiInfo)
-	return e
-}
+func (r Info) KprobeMulti() *KprobeMultiInfo { _ = "STUB: not implemented"; return nil }
 
-// UprobeMulti returns uprobe-multi type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) UprobeMulti() *UprobeMultiInfo {
-	e, _ := r.extra.(*UprobeMultiInfo)
-	return e
-}
+func (r Info) UprobeMulti() *UprobeMultiInfo { _ = "STUB: not implemented"; return nil }
 
-// PerfEvent returns perf-event type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) PerfEvent() *PerfEventInfo {
-	e, _ := r.extra.(*PerfEventInfo)
-	return e
-}
+func (r Info) PerfEvent() *PerfEventInfo { _ = "STUB: not implemented"; return nil }
 
-// RawTracepoint returns raw-tracepoint type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) RawTracepoint() *RawTracepointInfo {
-	e, _ := r.extra.(*RawTracepointInfo)
-	return e
-}
+func (r Info) RawTracepoint() *RawTracepointInfo { _ = "STUB: not implemented"; return nil }
 
-// Iter returns iter type-specific link info.
-//
-// Returns nil if the type-specific link info isn't available.
-func (r Info) Iter() *IterInfo {
-	e, _ := r.extra.(*IterInfo)
-	return e
-}
+func (r Info) Iter() *IterInfo { _ = "STUB: not implemented"; return nil }
